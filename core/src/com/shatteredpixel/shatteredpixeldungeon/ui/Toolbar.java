@@ -85,7 +85,6 @@ public class Toolbar extends Component {
 				return true;
 			}
 
-			;
 		});
 		
 		add( btnSearch = new Tool(44, 0, 20, 26, GameAction.SEARCH ) {
@@ -139,63 +138,74 @@ public class Toolbar extends Component {
 				add(gold);
 			}
 
-			;
-
 			@Override
 			protected void layout() {
 				super.layout();
 				gold.fill(this);
 			}
-
-			;
+			
 		});
 
 		add(pickedUp = new PickedUpItem());
 	}
-
+	
 	@Override
 	protected void layout() {
-
+		
+		boolean slotsRTL = true;
+		
 		int[] visible = new int[4];
 		int slots = SPDSettings.quickSlots();
-
-		for(int i = 0; i <= 3; i++)
-			visible[i] = (int)((slots > i) ? y+2 : y+25);
-
-		for(int i = 0; i <= 3; i++) {
-			btnQuick[i].visible = btnQuick[i].active = slots > i;
-			//decides on quickslot layout, depending on available screen size.
-			if (slots == 4 && width < 152){
-				if (width < 138){
-					if ((SPDSettings.flipToolbar() && i == 3) ||
-							(!SPDSettings.flipToolbar() && i == 0)) {
-						btnQuick[i].border(0, 0);
-						btnQuick[i].frame(88, 0, 17, 24);
-					} else {
-						btnQuick[i].border(0, 1);
-						btnQuick[i].frame(88, 0, 18, 24);
-					}
-				} else {
-					if (i == 0 && !SPDSettings.flipToolbar() ||
-							i == 3 && SPDSettings.flipToolbar()){
-						btnQuick[i].border(0, 2);
-						btnQuick[i].frame(106, 0, 19, 24);
-					} else if (i == 0 && SPDSettings.flipToolbar() ||
-							i == 3 && !SPDSettings.flipToolbar()){
-						btnQuick[i].border(2, 1);
-						btnQuick[i].frame(86, 0, 20, 24);
-					} else {
-						btnQuick[i].border(0, 1);
-						btnQuick[i].frame(88, 0, 18, 24);
-					}
-				}
-			} else {
-				btnQuick[i].border(2, 2);
-				btnQuick[i].frame(64, 0, 22, 24);
-			}
-
+		
+		float slotsWidth = 0;
+		
+		int leftSlot = 0, rightSlot = slots - 1;
+		
+		if (slotsRTL) {
+			leftSlot = slots - 1;
+			rightSlot = 0;
 		}
 
+		for(int i = 0; i <= 3; i++) {
+			if (btnQuick[i].visible = btnQuick[i].active = slots > i)
+				visible[i] = (int) y + 2;
+			else visible[i] = (int) y + 25;
+		}
+		
+		//decides on quickslot layout, depending on available screen size.
+		if (width >= 152 || slots != 4) {
+			for (int i = 0; i < slots; i++) {
+				btnQuick[i].setType(QuickslotTool.FULL_SIZE);
+				slotsWidth += btnQuick[i].width();
+			}
+		} else {
+			if (width > 138) {
+				btnQuick[leftSlot].setType(QuickslotTool.COMPACT_LEFT_BORDERED);
+				btnQuick[rightSlot].setType(QuickslotTool.COMPACT_RIGHT_BORDERED);
+			} else if (width > 136) {
+				if (SPDSettings.flipToolbar()) {
+					btnQuick[leftSlot].setType(QuickslotTool.COMPACT);
+					btnQuick[rightSlot].setType(QuickslotTool.COMPACT_RIGHT_BORDERED);
+				} else {
+					btnQuick[leftSlot].setType(QuickslotTool.COMPACT_LEFT_BORDERED);
+					btnQuick[rightSlot].setType(QuickslotTool.COMPACT_NO_BORDER);
+				}
+			} else {
+				btnQuick[leftSlot].setType(QuickslotTool.COMPACT);
+				btnQuick[rightSlot].setType(QuickslotTool.COMPACT_NO_BORDER);
+			}
+			
+			slotsWidth += btnQuick[leftSlot].width();
+			slotsWidth += btnQuick[rightSlot].width();
+			
+			for (int j = 1; j < slots - 1; j++) {
+				int i = slotsRTL ? slots - 1 - j : j;
+				btnQuick[i].setType(QuickslotTool.COMPACT);
+				slotsWidth += btnQuick[i].width();
+			}
+		}
+		
+		
 		float right = width;
 		switch(Mode.valueOf(SPDSettings.toolbarMode())){
 			case SPLIT:
@@ -203,11 +213,7 @@ public class Toolbar extends Component {
 				btnSearch.setPos(btnWait.right(), y);
 
 				btnInventory.setPos(right - btnInventory.width(), y);
-
-				btnQuick[0].setPos(btnInventory.left() - btnQuick[0].width(), visible[0]);
-				btnQuick[1].setPos(btnQuick[0].left() - btnQuick[1].width(), visible[1]);
-				btnQuick[2].setPos(btnQuick[1].left() - btnQuick[2].width(), visible[2]);
-				btnQuick[3].setPos(btnQuick[2].left() - btnQuick[3].width(), visible[3]);
+				
 				break;
 
 			//center = group but.. well.. centered, so all we need to do is pre-emptively set the right side further in.
@@ -222,25 +228,25 @@ public class Toolbar extends Component {
 				btnWait.setPos(right - btnWait.width(), y);
 				btnSearch.setPos(btnWait.left() - btnSearch.width(), y);
 				btnInventory.setPos(btnSearch.left() - btnInventory.width(), y);
-
-				btnQuick[0].setPos(btnInventory.left() - btnQuick[0].width(), visible[0]);
-				btnQuick[1].setPos(btnQuick[0].left() - btnQuick[1].width(), visible[1]);
-				btnQuick[2].setPos(btnQuick[1].left() - btnQuick[2].width(), visible[2]);
-				btnQuick[3].setPos(btnQuick[2].left() - btnQuick[3].width(), visible[3]);
+				
 				break;
 		}
 		right = width;
-
+		float left = btnInventory.left() - slotsWidth;
+		
 		if (SPDSettings.flipToolbar()) {
 
 			btnWait.setPos( (right - btnWait.right()), y);
 			btnSearch.setPos( (right - btnSearch.right()), y);
 			btnInventory.setPos( (right - btnInventory.right()), y);
-
-			for(int i = 0; i <= 3; i++) {
-				btnQuick[i].setPos( right - btnQuick[i].right(), visible[i]);
-			}
-
+			
+			left = btnInventory.right();
+		}
+		
+		for (int j = 0; j < slots; j++) {
+			int i = slotsRTL ? slots - 1 - j : j;
+			btnQuick[i].setPos(left, visible[i]);
+			left = btnQuick[i].right();
 		}
 
 	}
@@ -369,11 +375,44 @@ public class Toolbar extends Component {
 			borderRight = right;
 			layout();
 		}
-
+		
+		public static final int FULL_SIZE = 0;
+		public static final int COMPACT = 1;
+		public static final int COMPACT_LEFT_BORDERED = 2;
+		public static final int COMPACT_RIGHT_BORDERED = 3;
+		public static final int COMPACT_NO_BORDER = 4;
+		
+		public void setType(int type) {
+			switch (type) {
+				case FULL_SIZE:
+					frame(64, 0, 22, 24);
+					border(2, 2);
+					break;
+				case COMPACT:
+					frame(88, 0, 18, 24);
+					border(0, 1);
+					break;
+				case COMPACT_LEFT_BORDERED:
+					frame(86, 0, 20, 24);
+					border(2, 1);
+					break;
+				case COMPACT_RIGHT_BORDERED:
+					frame(106, 0, 19, 24);
+					border(0, 2);
+					break;
+				case COMPACT_NO_BORDER:
+					frame(88, 0, 17, 24);
+					border(0, 0);
+					break;
+				default:
+					throw new IllegalArgumentException("Not a valid quickslot tool type.");
+			}
+		}
+		
 		@Override
 		protected void layout() {
 			super.layout();
-			slot.setRect( x + borderLeft, y + 2, width - borderLeft-borderRight, height - 4 );
+			slot.setRect(x + borderLeft, y + 2, width - borderLeft - borderRight, height - 4);
 		}
 
 		@Override
